@@ -19,3 +19,5 @@ Below is the text file and other formatting rules:
 
 This repository includes the source code and a zip file, containing the ability to run it without the code.
 It includes a compiled JAR of the program, a text file that comes with pre-made patron information for testing, a read-me, and a batch file to run the program with.
+
+## [You can download the file here!](https://github.com/brodystewart-git/library-management-system/releases/download/v1.0/Library.Management.System_Brody.Stewart.zip)
