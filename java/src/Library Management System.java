@@ -13,7 +13,7 @@
  *
  * Below is the text file and other formatting rules:
  * This text file can hold multiple patrons.
- * It must be formatted as "FirstName LastName-Address-Fines", separated by line for each patron.
+ * It must be formatted as "UniqueID-FirstName LastName-Address-Fines", separated by line for each patron.
  * Addresses must be between 5 and 100 characters and fines need to be between $0 and $250.
  */
 
@@ -88,7 +88,9 @@ public class LMS {
                 if(address.equals("exit"))  return;
                 double fines = promptForFines();
                 if(fines == -1)  return;
-                addPatron(name, address, fines);
+                highestPatronID++;
+                int addID = highestPatronID;
+                addPatron(addID, name, address, fines);
                 break;
             case "2": // Add a Patron by File
                 System.out.println("Adding Patron by file. Please ensure that the file is a text file and each new entry is on a separate line.");
@@ -240,9 +242,7 @@ public class LMS {
      *  This program will not fill in missing IDs (1,2,3,5,8,9) to ensure there is no confusion with past users.
      *  Creates a new patron with this information and adds it to the patrons array.
      */
-    private static void addPatron(String name, String address, double fine) {
-        highestPatronID++;
-        int id = highestPatronID;
+    private static void addPatron(int id, String name, String address, double fine) {
         Patron patron = new Patron(id, name, address, fine);
         patrons.add(patron);
         System.out.println("Successfully added " + name + ".");
@@ -256,15 +256,17 @@ public class LMS {
      * 0. Skips empty lines.
      * 1. Read a line.
      * 2. Parse the line, splitting it where '-' is found. Store each broken string in the data array.
-     * If the data array doesn't contain three strings (name, address, fine), it alerts the user and skips the line.
-     * 3. Checks if the first string, name, is formatted correctly (is larger than 2 characters and contains a space).
+     * If the data array doesn't contain four strings (id, name, address, fine), it alerts the user and skips the line.
+     * 3. Checks if the first string, id, is a number and is not already in the system.
      * If not, skips the line.
-     * 4. Checks if the second string, address, is formatted correctly (is larger than 5 characters and less than 100).
+     * 4. Checks if the second string, name, is formatted correctly (is larger than 2 characters and contains a space).
      * If not, skips the line.
-     * 5. Converts the third string, fine, into a double and checks if it's between 0-250 dollars.
+     * 5. Checks if the third string, address, is formatted correctly (is larger than 5 characters and less than 100).
+     * If not, skips the line.
+     * 6. Converts the fourth string, fine, into a double and checks if it's between 0-250 dollars.
      * If it isn't able to be converted into an integer, tells the user and skips the line.
      * If it isn't between 0 and 250 dollars, tells the user and skips the line.
-     * 6. If all is correct, calls the addPatron method with the data and adds one to count.
+     * 7. If all is correct, calls the addPatron method with the data and adds one to count.
      *
      * After everything is completed, it tells the user the total number of patrons added.
      * If it had an issue reading or accessing the file, it alerts the user and returns to main menu.
@@ -293,26 +295,44 @@ public class LMS {
                     if (line.trim().isEmpty()) continue;
 
                     String[] data = line.split("-");
-                    if(data.length == 3) {
+                    if(data.length == 4) {
                         double fine;
-                        String name = data[0].trim();
-                        if (name.length() < 2 || !name.contains(" ")) {
-                            System.out.println("Error: Name is too short. Ensure it's formatted as Firstname Lastname on line '" +  line + "'. Skipping line.");
+                        int id = -1;
+
+                        try {
+                            int tempID  = Integer.parseInt(data[0].trim());
+                            for(Patron p : patrons){
+                               if(tempID == p.getPatronId()) {
+                                   throw new IllegalArgumentException("Patron ID Already Exists");
+                               }
+                            }
+                            id = tempID;
+                        } catch (NumberFormatException e) {
+                            System.out.println("Error: ID is not a number in line '" +  line + "'. Skipping line.");
+                            continue;
+                        } catch (IllegalArgumentException e){
+                            System.out.println("Error: ID already in system for line '" +  line + "'. Skipping line.");
                             continue;
                         }
 
-                        String address = data[1].trim();
+                        String name = data[1].trim();
+                        if (name.length() < 2 || !name.contains(" ")) {
+                            System.out.println("Error: Name is incorrect. Ensure it's formatted as Firstname Lastname and has at least two characters on line '" +  line + "'. Skipping line.");
+                            continue;
+                        }
+
+                        String address = data[2].trim();
                         if (address.length() < 5 || address.length() > 250) {
                             System.out.println("Error: Address is incorrect. Ensure it's 5-250 characters on line '" +  line + "'. Skipping line.");
                             continue;
                         }
 
                         try {
-                            fine = Double.parseDouble(data[2].trim());
+                            fine = Double.parseDouble(data[3].trim());
                             if(fine < 0 || fine > 250) {
                                 throw new IllegalArgumentException("Fine out of range ($0-250)"); // Throws an error if it's not between 0-250.
                             }
-                            addPatron(name, address, fine);
+                            addPatron(id, name, address, fine);
                             count++;
                         }catch (NumberFormatException e) {
                             System.out.println("Error: Fine is not a number in line '" +  line + "'. Skipping line.");
