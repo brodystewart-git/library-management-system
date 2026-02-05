@@ -12,7 +12,8 @@ Finally, the user can display all patron information in the system.
 
 Below is the text file and other formatting rules:
  * This text file can hold multiple patrons.
- * It must be formatted as "FirstName LastName-Address-Fines", separated by line for each patron.
+ * It must be formatted as "UniqueID-FirstName LastName-Address-Fines", separated by line for each patron.
+ * Id field should be unique to the system. It will check if this is true.
  * Name field should always follow the FirstName LastName format and be above 2 characters.
  * Address field should be between 5 and 100 characters.
  * Fine field should be between 0 and 250 dollars
