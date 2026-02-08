@@ -38,8 +38,6 @@ public class LMS {
         while (running){
             mainMenu();
             if (running){
-                System.out.println("\n\nPress enter to return to the main menu.");
-                String timeStopper = scanner.nextLine();
                 System.out.println("\n".repeat(5));
             }
         }
@@ -75,6 +73,7 @@ public class LMS {
         System.out.println("3. Remove a patron");
         System.out.println("4. Find patron");
         System.out.println("5. Display all patrons");
+        System.out.println("6. Save patrons to text file.");
         System.out.println("Enter 'quit' to leave the program.\n");
         System.out.print("Please enter the number of your choice: ");
 
@@ -88,13 +87,15 @@ public class LMS {
                 if(address.equals("exit"))  return;
                 double fines = promptForFines();
                 if(fines == -1)  return;
-                highestPatronID++;
+                calcHighestPatronID();
                 int addID = highestPatronID;
+                calcHighestPatronID();
+                addID = padId(addID);
                 addPatron(addID, name, address, fines);
                 break;
             case "2": // Add a Patron by File
                 System.out.println("Adding Patron by file. Please ensure that the file is a text file and each new entry is on a separate line.");
-                System.out.println("Format: Name-Address-Fines");
+                System.out.println("Format: ID-Name-Address-Fines");
                 fileReader();
                 break;
             case "3": // Remove a patron
@@ -131,14 +132,17 @@ public class LMS {
                 displayAll();
                 // displayAll();
                 break;
+            case "6": // Add a Patron by File
+                System.out.println("Saving patrons to text file. Please select a file and be prepared for all data to be deleted on that file.");
+                System.out.println("Format: ID-Name-Address-Fines");
+                fileWriter();
+                break;
             case "quit":
                 System.out.println("System closing, have a good day.");
                 running = false;
                 break;
             default:
-                System.out.println("\n".repeat(5));
                 System.out.println("\nInvalid selection. Please try again.\n");
-                mainMenu();
                 break;
         }
     }
@@ -236,6 +240,55 @@ public class LMS {
         }
     }
 
+    /*
+    * This method is the calcHighestPatronID method.
+    * It simply recalculates the highest used ID to make adding manually easier for the system.
+    * It searches the patrons array for the highest ID and adds one to it, setting that as the highestPatronID variable.
+     */
+    private static void calcHighestPatronID(){
+        int id = 0;
+        for(Patron p : patrons){
+            if(p.getPatronId() > id){
+                id = p.getPatronId() + 1;
+            }
+        }
+        highestPatronID = id;
+    }
+
+    /*
+    * This method is the padId method. It pads an ID with 0s to the right of it, in the case it's less than 7 digits.
+    * It does this by taking an integer id, and repeatedly multiplying it by 10 until it reaches 7 digits.
+    * It then returns an integer id, to be used by the system as the real ID.
+    * This ensures that even small IDs are always 7 digits long.
+     */
+    private static int padId(int id){
+        int paddedId = id;
+        //Pad patron id, if under 7 digits.
+        if (paddedId > 0){
+            while (String.valueOf(paddedId).length() < 7) {
+                paddedId *= 10; // Add a 0. 1 will become 10, 100, 1000, 10000, 100000, 1000000
+            }
+        }
+        return paddedId;
+    }
+
+    /*
+    * This is the sortArray method. This method sorts the patrons array by ID from lowest to highest.
+    * This is done using a simple bubble sort, going through every item int he list and comparing it to the next.
+    * When complete, the patrons array should be fully sorted for better displaying.
+     */
+    private static void sortArray(){
+        int size = patrons.size();
+        for(int i = 0; i < size - 1; i++){
+            for(int j = 0; j < size - i - 1; j++){
+                if (patrons.get(j).getPatronId() > patrons.get(j + 1).getPatronId()){
+                    Patron temp = patrons.get(j);
+                    patrons.set(j, patrons.get(j + 1));
+                    patrons.set(j+1, temp);
+                }
+            }
+        }
+    }
     /* This is the addPatron method. It takes two strings and an integer.
      *  The first string is the name of the patron. The second is the patron's address. The double is their unpaid fines amount.
      *  Sets the id to the next highest patron id, based on the highestPatronID value.
@@ -301,6 +354,7 @@ public class LMS {
 
                         try {
                             int tempID  = Integer.parseInt(data[0].trim());
+                            tempID = padId(tempID);
                             for(Patron p : patrons){
                                if(tempID == p.getPatronId()) {
                                    throw new IllegalArgumentException("Patron ID Already Exists");
@@ -351,6 +405,46 @@ public class LMS {
         tempFrame.dispose();
     }
 
+    /* This is the file writer method. It writes the patrons' data to a given file.
+     * This creates a simple file chooser GUI. It allows the user to select a specific text file from their computer.
+     * It does this using JFileChooser and limits the file extension with FileNameExtensionFilter.
+     * Once a user has selected a file, it uses Print Writer to write to the file.
+     * This is done by using a for each loop on the patrons array, then writing each patron.print() function to the file.
+     * This functions prints out ID-Name-Address-Fines, which should make the system also be able to read it easily.
+     * Before anything, it makes sure that the patrons array is not empty.
+     */
+    private static void fileWriter(){
+        if (patrons.isEmpty()){
+            System.out.println("Error. No patrons in the system. Exiting.");
+            return;
+        }
+
+        javax.swing.JFrame tempFrame = new javax.swing.JFrame();
+        tempFrame.setAlwaysOnTop(true);
+        tempFrame.setVisible(false);
+
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Save Patrons to Text File");
+        FileNameExtensionFilter filter = new FileNameExtensionFilter("Text Files (*.txt)", "txt");
+        fileChooser.setFileFilter(filter);
+        fileChooser.setAcceptAllFileFilterUsed(false);
+        int userChoice = fileChooser.showOpenDialog(tempFrame);
+
+        if (userChoice == JFileChooser.APPROVE_OPTION){
+            File file = fileChooser.getSelectedFile();
+            System.out.println("Writing to: " + file.getName());
+            try (java.io.PrintWriter fileAuthor = new java.io.PrintWriter(file)) {
+                for(Patron p: patrons){
+                    fileAuthor.println(p.toString()); // Should print it in the same format, ID-Name-Address-Fines
+                }
+            }catch (java.io.IOException e) {
+                System.out.println("Error: Unable to write to file. Exiting.");
+            }
+            System.out.println("Save to file. Exiting.");
+        }else System.out.println("File saving cancelled. Exiting.");
+    }
+
+
     /* This is the removePatron method. It takes an integer parameter.
      * It takes a patron's Id as an integer and searches the entire patrons array for the patron with the matching ID.
      * When found, alerts the user this patron will be removed and removes them.
@@ -373,7 +467,7 @@ public class LMS {
      * If none are found, alerts the user and returns to main menu.
      */
     private static void displayInfo(int id) {
-        for (Patron p : patrons) { // Get the next highest patron id.
+        for (Patron p : patrons) {
             int patronId = p.getPatronId();
             if (id == patronId) {
                 p.print();
@@ -391,7 +485,7 @@ public class LMS {
      */
     private static void displayInfo(String name) {
         boolean found = false;
-        for (Patron p : patrons) { // Get the next highest patron id.
+        for (Patron p : patrons) {
             String patronName = p.getPatronName();
             if (name.equals(patronName)) {
                 p.print();
@@ -410,6 +504,7 @@ public class LMS {
             System.out.println("Error. No patrons in the system. Exiting.");
             return;
         }
+        sortArray();
         for (Patron p : patrons) {
             p.print();
         }
