@@ -34,4 +34,7 @@ public class Patron {
     public void print() {
         System.out.println(patron_id + "-" + patron_name + "-" + patron_address + "-$" + patron_fines);
     }
+    public String toString(){
+        return (patron_id + "-" + patron_name + "-" + patron_address + "-" + patron_fines);
+    }
 }
